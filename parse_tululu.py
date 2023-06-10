@@ -1,5 +1,6 @@
 import requests
 import os
+import argparse
 
 from pathlib import Path
 from bs4 import BeautifulSoup
@@ -65,10 +66,16 @@ def parse_book_page(response: requests):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Программа скачивает книги с tululu.org')
+    parser.add_argument('--start_id', help='ID книги с которой начать скачивание', type=int, default=1)
+    parser.add_argument('--end_id', help='ID книги по которую скачать', type=int, default=10)
+
+    args = parser.parse_args()
+
     Path("books").mkdir(parents=True, exist_ok=True)
     Path("images").mkdir(parents=True, exist_ok=True)
 
-    for count in range(1, 11):
+    for count in range(args.start_id, args.end_id + 1):
         url = f"{HOME_URL}/b{count}/"
         response = requests.get(url)
         response.raise_for_status()
