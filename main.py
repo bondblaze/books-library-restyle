@@ -67,6 +67,9 @@ def main():
             for comment in comments:
                 print(comment.find('span').text)
 
+            genres = [genre.get_text() for genre in soup.find('span', class_='d_book').find_all('a')]
+            print(genres)
+
         except requests.HTTPError:
             continue
 
