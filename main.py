@@ -7,7 +7,7 @@ from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 from urllib.parse import urlsplit
 
-HOME_URL = "https://tululu.org"
+HOME_URL = 'https://tululu.org'
 
 
 def check_for_redirect(response):
@@ -38,40 +38,55 @@ def download_image(url, folder='images/'):
         file.write(response.content)
 
 
+def parse_book_page(response: requests):
+    soup = BeautifulSoup(response.text, 'lxml')
+
+    book_title = soup.find('h1').text.split('::')
+    genres = [genre.get_text() for genre in soup.find('span', class_='d_book').find_all('a')]
+    comments = soup.find('div', id='content').find_all('div', class_='texts')
+    comments_sanitized = [comment.find('span').text for comment in comments]
+
+    download_url = soup.find('a', string='скачать txt')
+
+    txt_url = ''
+    if download_url is not None:
+        txt_url = urljoin(HOME_URL, download_url['href'])
+
+    image_url = urljoin(HOME_URL, soup.find('div', class_='bookimage').find('img')['src'])
+
+    return {
+        'Название': book_title[0].strip(),
+        'Автор': book_title[1].strip(),
+        'Жанр': genres,
+        'Комментарии': comments_sanitized,
+        'Ссылка для скачивания': txt_url,
+        'Ccылка на картинку': image_url
+    }
+
+
 def main():
     Path("books").mkdir(parents=True, exist_ok=True)
     Path("images").mkdir(parents=True, exist_ok=True)
 
-    for i in range(1, 11):
-        url = f"{HOME_URL}/b{i}/"
+    for count in range(1, 11):
+        url = f"{HOME_URL}/b{count}/"
         response = requests.get(url)
         response.raise_for_status()
+
         try:
             check_for_redirect(response)
-            soup = BeautifulSoup(response.text, 'lxml')
-            book_title = soup.find('h1').text.split('::')
-
-            print(f"Заголовок: {book_title[0].strip()}")
-
-            download_url = soup.find('a', string='скачать txt', href=True)
-            img_url = urljoin(HOME_URL, soup.find('div', class_='bookimage').find('img')['src'])
-
-            if download_url is not None:
-                txt_url = urljoin(HOME_URL, download_url['href'])
-                download_txt(txt_url, f"{i}." + book_title[0].strip(), folder='books/')
-
-            download_image(img_url, folder='images/')
-
-            comments = soup.find('div', id='content').find_all('div', class_='texts')
-
-            for comment in comments:
-                print(comment.find('span').text)
-
-            genres = [genre.get_text() for genre in soup.find('span', class_='d_book').find_all('a')]
-            print(genres)
-
         except requests.HTTPError:
             continue
+
+        book_page = parse_book_page(response)
+
+        print(f"Название: {book_page['Название']}")
+        print(f"Автор: {book_page['Автор']}")
+
+        if book_page['Ссылка для скачивания'] != '':
+            download_txt(book_page['Ссылка для скачивания'], f"{count}." + book_page['Название'], folder='books/')
+
+        download_image(book_page['Ccылка на картинку'], folder='images/')
 
 
 if __name__ == '__main__':
