@@ -50,9 +50,10 @@ def main():
             check_for_redirect(response)
             soup = BeautifulSoup(response.text, 'lxml')
             book_title = soup.find('h1').text.split('::')
-            # print(f"Заголовок: {book_title[0].strip()}")
-            download_url = soup.find('a', string='скачать txt', href=True)
 
+            print(f"Заголовок: {book_title[0].strip()}")
+
+            download_url = soup.find('a', string='скачать txt', href=True)
             img_url = urljoin(HOME_URL, soup.find('div', class_='bookimage').find('img')['src'])
 
             if download_url is not None:
@@ -60,6 +61,11 @@ def main():
                 download_txt(txt_url, f"{i}." + book_title[0].strip(), folder='books/')
 
             download_image(img_url, folder='images/')
+
+            comments = soup.find('div', id='content').find_all('div', class_='texts')
+
+            for comment in comments:
+                print(comment.find('span').text)
 
         except requests.HTTPError:
             continue
