@@ -1,6 +1,8 @@
 import requests
 import os
 import argparse
+import logging
+import time
 
 from pathlib import Path
 from bs4 import BeautifulSoup
@@ -10,16 +12,22 @@ from urllib.parse import urlsplit
 
 HOME_URL = 'https://tululu.org'
 
+logging.basicConfig(level=logging.INFO)
+
+
+class BookDownloadPageNotFoundError(TypeError):
+    pass
+
 
 def check_for_redirect(response):
-    for resp in response.history:
-        if resp.status_code != 200 or response.url == HOME_URL:
-            raise requests.HTTPError
+    if len(response.history) != 0:
+        raise requests.HTTPError(f"Page was redirected to {response.url}")
 
 
 def download_txt(url, filename, folder='books/'):
     response = requests.get(url)
     response.raise_for_status()
+    check_for_redirect(response)
 
     filepath = os.path.join(folder, sanitize_filename(filename) + '.txt')
 
@@ -30,6 +38,7 @@ def download_txt(url, filename, folder='books/'):
 def download_image(url, folder='images/'):
     response = requests.get(url)
     response.raise_for_status()
+    check_for_redirect(response)
 
     img_name = str(urlsplit(url).path.split('/')[2])
 
@@ -49,19 +58,20 @@ def parse_book_page(response: requests):
 
     download_url = soup.find('a', string='скачать txt')
 
-    txt_url = ''
     if download_url is not None:
-        txt_url = urljoin(HOME_URL, download_url['href'])
+        txt_url = urljoin(response.url, download_url['href'])
+    else:
+        raise BookDownloadPageNotFoundError(f"Download url not found for page {response.url}")
 
-    image_url = urljoin(HOME_URL, soup.find('div', class_='bookimage').find('img')['src'])
+    image_url = urljoin(response.url, soup.find('div', class_='bookimage').find('img')['src'])
 
     return {
-        'Название': book_title[0].strip(),
-        'Автор': book_title[1].strip(),
-        'Жанр': genres,
-        'Комментарии': comments_sanitized,
-        'Ссылка для скачивания': txt_url,
-        'Ccылка на картинку': image_url
+        'title': book_title[0].strip(),
+        'author': book_title[1].strip(),
+        'genre': genres,
+        'comments': comments_sanitized,
+        'txt_url': txt_url,
+        'image_url': image_url
     }
 
 
@@ -72,28 +82,38 @@ def main():
 
     args = parser.parse_args()
 
-    Path("books").mkdir(parents=True, exist_ok=True)
-    Path("images").mkdir(parents=True, exist_ok=True)
+    Path('books').mkdir(parents=True, exist_ok=True)
+    Path('images').mkdir(parents=True, exist_ok=True)
 
     for count in range(args.start_id, args.end_id + 1):
+        connection = False
         url = f"{HOME_URL}/b{count}/"
-        response = requests.get(url)
-        response.raise_for_status()
 
-        try:
-            check_for_redirect(response)
-        except requests.HTTPError:
-            continue
+        while not connection:
+            try:
+                response = requests.get(url)
+                response.raise_for_status()
 
-        book_page = parse_book_page(response)
+                check_for_redirect(response)
+                book_title, book_author, book_genre, \
+                    book_comments, book_txt_url, book_image_url = parse_book_page(response).values()
 
-        print(f"Название: {book_page['Название']}")
-        print(f"Автор: {book_page['Автор']}")
-
-        if book_page['Ссылка для скачивания'] != '':
-            download_txt(book_page['Ссылка для скачивания'], f"{count}." + book_page['Название'], folder='books/')
-
-        download_image(book_page['Ccылка на картинку'], folder='images/')
+                download_txt(book_txt_url, f"{count}." + book_title, folder='books/')
+                download_image(book_image_url, folder='images/')
+                logging.info(f"Загружена книга: {book_title}. Автор: {book_author}. ")
+                connection = True
+            except requests.HTTPError as exception:
+                logging.error(f"HTTP Error from page {HOME_URL}/b{count}: {exception}")
+                connection = True
+                continue
+            except requests.ConnectionError as exception:
+                logging.error(f"Network Connection Error: {exception}")
+                time.sleep(30)
+                continue
+            except BookDownloadPageNotFoundError as exception:
+                logging.error(exception)
+                connection = True
+                continue
 
 
 if __name__ == '__main__':
