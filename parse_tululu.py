@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 HOME_URL = 'https://tululu.org'
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__file__)
 
 
 class BookDownloadPageNotFoundError(TypeError):
@@ -100,21 +100,23 @@ def main():
 
                 download_txt(book_txt_url, f"{count}." + book_title, folder='books/')
                 download_image(book_image_url, folder='images/')
-                logging.info(f"Загружена книга: {book_title}. Автор: {book_author}. ")
+                logger.info(f"Загружена книга: {book_title}. Автор: {book_author}. ")
                 connection = True
             except requests.HTTPError as exception:
-                logging.error(f"HTTP Error from page {HOME_URL}/b{count}: {exception}")
+                logger.error(f"HTTP Error from page {HOME_URL}/b{count}: {exception}")
                 connection = True
                 continue
             except requests.ConnectionError as exception:
-                logging.error(f"Network Connection Error: {exception}")
+                logger.error(f"Network Connection Error: {exception}")
                 time.sleep(30)
                 continue
             except BookDownloadPageNotFoundError as exception:
-                logging.error(exception)
+                logger.error(exception)
                 connection = True
                 continue
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.ERROR)
+    logger.setLevel(logging.INFO)
     main()
