@@ -16,7 +16,19 @@ pip install -r requirements.txt
 Пример запуска:
 
 ```
-python3 bs4_tutorial.py --start_id 10 --end_id 15
+python3 parse_tululu.py --start_id 10 --end_id 15
+```
+
+Результат:
+
+В корне проекта появляться папки `books` c книгами в формате txt и `images` c картинками книг.
+
+Пример вывода в консоль:
+
+```
+INFO:root:Загружена книга: Административные рынки СССР и России. Автор: Кордонский Симон.
+ERROR:root:HTTP Error from page https://tululu.org/b2: Page was redirected to https://tululu.org/
+INFO:root:Загружена книга: Азбука экономики. Автор: Строуп Р.
 ```
 
 ### Аргументы
