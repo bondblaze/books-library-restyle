@@ -20,7 +20,7 @@ class BookDownloadPageNotFoundError(TypeError):
 
 
 def check_for_redirect(response):
-    if len(response.history) != 0:
+    if response.history:
         raise requests.HTTPError(f"Page was redirected to {response.url}")
 
 
