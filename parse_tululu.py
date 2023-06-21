@@ -21,7 +21,7 @@ class BookDownloadPageNotFoundError(TypeError):
 
 def check_for_redirect(response):
     if response.history:
-        raise requests.HTTPError(f"Page was redirected to {response.url}")
+        raise requests.HTTPError(f'Page was redirected to {response.url}')
 
 
 def download_txt(url, filename, folder='books/'):
@@ -61,7 +61,7 @@ def parse_book_page(response: requests):
     if book_download_url:
         txt_url = urljoin(response.url, book_download_url['href'])
     else:
-        raise BookDownloadPageNotFoundError(f"Download url not found for page {response.url}")
+        raise BookDownloadPageNotFoundError(f'Download url not found for page {response.url}')
 
     image_url = urljoin(response.url, soup.find('div', class_='bookimage').find('img')['src'])
 
@@ -87,7 +87,7 @@ def main():
 
     for count in range(args.start_id, args.end_id + 1):
         connection = False
-        url = f"{HOME_URL}/b{count}/"
+        url = f'{HOME_URL}/b{count}/'
 
         while not connection:
             try:
@@ -98,16 +98,16 @@ def main():
                 book_title, book_author, book_genre, \
                     book_comments, book_txt_url, book_image_url = parse_book_page(response).values()
 
-                download_txt(book_txt_url, f"{count}." + book_title, folder='books/')
+                download_txt(book_txt_url, f'{count}.' + book_title, folder='books/')
                 download_image(book_image_url, folder='images/')
-                logger.info(f"Загружена книга: {book_title}. Автор: {book_author}. ")
+                logger.info(f'Загружена книга: {book_title}. Автор: {book_author}.')
                 connection = True
             except requests.HTTPError as exception:
-                logger.error(f"HTTP Error from page {HOME_URL}/b{count}: {exception}")
+                logger.error(f'HTTP Error from page {HOME_URL}/b{count}: {exception}')
                 connection = True
                 continue
             except requests.ConnectionError as exception:
-                logger.error(f"Network Connection Error: {exception}")
+                logger.error(f'Network Connection Error: {exception}')
                 time.sleep(30)
                 continue
             except BookDownloadPageNotFoundError as exception:
