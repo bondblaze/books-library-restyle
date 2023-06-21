@@ -76,6 +76,9 @@ def parse_book_page(response: requests):
 
 
 def main():
+    logging.basicConfig(level=logging.ERROR)
+    logger.setLevel(logging.INFO)
+
     parser = argparse.ArgumentParser(description='Программа скачивает книги с tululu.org')
     parser.add_argument('--start_id', help='ID книги с которой начать скачивание', type=int, default=1)
     parser.add_argument('--end_id', help='ID книги по которую скачать', type=int, default=10)
@@ -117,6 +120,4 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.ERROR)
-    logger.setLevel(logging.INFO)
     main()
