@@ -58,7 +58,7 @@ def parse_book_page(response: requests):
 
     book_download_url = soup.find('a', string='скачать txt')
 
-    if book_download_url is not None:
+    if book_download_url:
         txt_url = urljoin(response.url, book_download_url['href'])
     else:
         raise BookDownloadPageNotFoundError(f"Download url not found for page {response.url}")
