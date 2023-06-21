@@ -56,10 +56,10 @@ def parse_book_page(response: requests):
     comments = soup.find('div', id='content').find_all('div', class_='texts')
     comments_sanitized = [comment.find('span').text for comment in comments]
 
-    download_url = soup.find('a', string='скачать txt')
+    book_download_url = soup.find('a', string='скачать txt')
 
-    if download_url is not None:
-        txt_url = urljoin(response.url, download_url['href'])
+    if book_download_url is not None:
+        txt_url = urljoin(response.url, book_download_url['href'])
     else:
         raise BookDownloadPageNotFoundError(f"Download url not found for page {response.url}")
 
